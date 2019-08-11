@@ -19,13 +19,23 @@
 #endif
 
 #include <gst/gst.h>
-#include "gstrealworldtime.h"
+
+#include "gstabsolutetimestamp.h"
+#include "gstmillisoverlay.h"
+#include "gsttimestampfiltersink.h"
 
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  gst_element_register (plugin, "realworldtime", GST_RANK_NONE,
-      GST_TYPE_REALWORLDTIME);
+  if (!gst_element_register (plugin, "absolutetimestamp", GST_RANK_NONE, GST_TYPE_ABSOLUTETIMESTAMP)) {
+      return FALSE;
+  }
+  if (!gst_element_register (plugin, "millisoverlay", GST_RANK_NONE, GST_TYPE_MILLISOVERLAY)) {
+      return FALSE;
+  }
+  if (!gst_element_register (plugin, "timestampfiltersink", GST_RANK_NONE, GST_TYPE_TIMESTAMPFILTERSINK)) {
+      return FALSE;
+  }
 
   return TRUE;
 }

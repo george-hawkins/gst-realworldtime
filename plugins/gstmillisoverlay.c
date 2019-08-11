@@ -15,8 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "config.h"
-
-#include <gst/gst.h>
 #include "gstmillisoverlay.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_millisoverlay_debug_category);

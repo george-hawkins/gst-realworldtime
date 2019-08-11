@@ -17,6 +17,7 @@
 #ifndef _GST_ABSOLUTETIMESTAMP_H_
 #define _GST_ABSOLUTETIMESTAMP_H_
 
+#include <glib/gstdio.h>
 #include <gst/base/gstbasetransform.h>
 
 G_BEGIN_DECLS
@@ -34,6 +35,8 @@ struct _GstAbsolutetimestamp
 {
   GstBaseTransform base_absolutetimestamp;
 
+  gchar *filename;
+  FILE *file;
 };
 
 struct _GstAbsolutetimestampClass

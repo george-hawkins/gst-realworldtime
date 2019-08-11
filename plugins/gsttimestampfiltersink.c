@@ -15,9 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "config.h"
-
-#include <gst/gst.h>
-#include <gst/base/gstbasesink.h>
 #include "gsttimestampfiltersink.h"
 
 GST_DEBUG_CATEGORY_STATIC (gst_timestampfiltersink_debug_category);

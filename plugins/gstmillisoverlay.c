@@ -14,25 +14,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-/**
- * SECTION:element-gstmillisoverlay
- *
- * The millisoverlay element does FIXME stuff.
- *
- * <refsect2>
- * <title>Example launch line</title>
- * |[
- * gst-launch-1.0 -v fakesrc ! millisoverlay ! FIXME ! fakesink
- * ]|
- * FIXME Describe what the pipeline does.
- * </refsect2>
- */
-
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
-#include <gst/gst.h>
 #include <gst/gst.h>
 #include "gstmillisoverlay.h"
 

@@ -34,6 +34,8 @@ struct _GstTimestampfiltersink
 {
   GstBaseSink base_timestampfiltersink;
 
+  gchar *filename;
+  gint index;
 };
 
 struct _GstTimestampfiltersinkClass

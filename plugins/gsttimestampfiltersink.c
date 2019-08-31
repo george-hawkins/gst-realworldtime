@@ -31,8 +31,6 @@ static void gst_timestampfiltersink_finalize (GObject * object);
 
 static GstFlowReturn gst_timestampfiltersink_render (GstBaseSink * sink,
     GstBuffer * buffer);
-static GstFlowReturn gst_timestampfiltersink_render_list (GstBaseSink * sink,
-    GstBufferList * buffer_list);
 
 #define DEFAULT_LOCATION "%05d"
 #define DEFAULT_INDEX 0
@@ -72,21 +70,29 @@ gst_timestampfiltersink_class_init (GstTimestampfiltersinkClass * klass)
       &gst_timestampfiltersink_sink_template);
 
   gst_element_class_set_static_metadata (GST_ELEMENT_CLASS (klass),
-      "FIXME Long name", "Generic", "FIXME Description",
-      "FIXME <fixme@example.com>");
+      "Timestamp-Filter Sink", "Sink/File",
+      "Write buffers filtered by timestamps to files",
+      "George Hawkins <https://github.com/george-hawkins>");
 
   gobject_class->set_property = gst_timestampfiltersink_set_property;
   gobject_class->get_property = gst_timestampfiltersink_get_property;
+
+  g_object_class_install_property (gobject_class, PROP_LOCATION,
+      g_param_spec_string ("location", "File Location",
+          "Location of the file to write", NULL,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
   gobject_class->finalize = gst_timestampfiltersink_finalize;
   base_sink_class->render = GST_DEBUG_FUNCPTR (gst_timestampfiltersink_render);
-  base_sink_class->render_list =
-      GST_DEBUG_FUNCPTR (gst_timestampfiltersink_render_list);
-
 }
 
 static void
 gst_timestampfiltersink_init (GstTimestampfiltersink * timestampfiltersink)
 {
+  timestampfiltersink->filename = g_strdup (DEFAULT_LOCATION);
+  timestampfiltersink->index = DEFAULT_INDEX;
+
+  gst_base_sink_set_sync (GST_BASE_SINK (timestampfiltersink), FALSE);
 }
 
 void
@@ -99,6 +105,11 @@ gst_timestampfiltersink_set_property (GObject * object, guint property_id,
   GST_DEBUG_OBJECT (timestampfiltersink, "set_property");
 
   switch (property_id) {
+    case PROP_LOCATION:
+      g_free (timestampfiltersink->filename);
+      /* FIXME: validate location to have just one %s */
+      timestampfiltersink->filename = g_strdup (g_value_get_string (value));
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -115,6 +126,9 @@ gst_timestampfiltersink_get_property (GObject * object, guint property_id,
   GST_DEBUG_OBJECT (timestampfiltersink, "get_property");
 
   switch (property_id) {
+    case PROP_LOCATION:
+      g_value_set_string (value, timestampfiltersink->filename);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -130,6 +144,7 @@ gst_timestampfiltersink_finalize (GObject * object)
   GST_DEBUG_OBJECT (timestampfiltersink, "finalize");
 
   /* clean up object here */
+  g_free (timestampfiltersink->filename);
 
   G_OBJECT_CLASS (gst_timestampfiltersink_parent_class)->finalize (object);
 }
@@ -141,17 +156,41 @@ gst_timestampfiltersink_render (GstBaseSink * sink, GstBuffer * buffer)
 
   GST_DEBUG_OBJECT (timestampfiltersink, "render");
 
+  GstMapInfo map;
+  GError *error = NULL;
+
+  gst_buffer_map (buffer, &map, GST_MAP_READ);
+
+  gchar *filename = g_strdup_printf (timestampfiltersink->filename, timestampfiltersink->index);
+  gboolean ret = g_file_set_contents (filename, (char *) map.data, map.size, &error);
+  if (!ret)
+    goto write_error;
+
+  g_free (filename);
+
+  timestampfiltersink->index++;
+
+  gst_buffer_unmap (buffer, &map);
   return GST_FLOW_OK;
-}
 
-/* Render a BufferList */
-static GstFlowReturn
-gst_timestampfiltersink_render_list (GstBaseSink * sink,
-    GstBufferList * buffer_list)
-{
-  GstTimestampfiltersink *timestampfiltersink = GST_TIMESTAMPFILTERSINK (sink);
+  /* ERRORS */
+write_error:
+  {
+    switch (error->code) {
+      case G_FILE_ERROR_NOSPC:{
+        GST_ELEMENT_ERROR (timestampfiltersink, RESOURCE, NO_SPACE_LEFT, (NULL), (NULL));
+        break;
+      }
+      default:{
+        GST_ELEMENT_ERROR (timestampfiltersink, RESOURCE, WRITE,
+            ("Error while writing to file \"%s\".", filename),
+            ("%s", g_strerror (errno)));
+      }
+    }
+    g_error_free (error);
+    g_free (filename);
 
-  GST_DEBUG_OBJECT (timestampfiltersink, "render_list");
-
-  return GST_FLOW_OK;
+    gst_buffer_unmap (buffer, &map);
+    return GST_FLOW_ERROR;
+  }
 }

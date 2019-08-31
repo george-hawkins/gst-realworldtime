@@ -29,20 +29,18 @@ static void gst_timestampfiltersink_get_property (GObject * object,
     guint property_id, GValue * value, GParamSpec * pspec);
 static void gst_timestampfiltersink_finalize (GObject * object);
 
-static gboolean gst_timestampfiltersink_set_caps (GstBaseSink * sink,
-    GstCaps * caps);
-static gboolean gst_timestampfiltersink_start (GstBaseSink * sink);
-static gboolean gst_timestampfiltersink_stop (GstBaseSink * sink);
-static gboolean gst_timestampfiltersink_event (GstBaseSink * sink,
-    GstEvent * event);
 static GstFlowReturn gst_timestampfiltersink_render (GstBaseSink * sink,
     GstBuffer * buffer);
 static GstFlowReturn gst_timestampfiltersink_render_list (GstBaseSink * sink,
     GstBufferList * buffer_list);
 
+#define DEFAULT_LOCATION "%05d"
+#define DEFAULT_INDEX 0
+
 enum
 {
-  PROP_0
+  PROP_0,
+  PROP_LOCATION
 };
 
 /* pad templates */
@@ -51,8 +49,7 @@ static GstStaticPadTemplate gst_timestampfiltersink_sink_template =
 GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("application/unknown")
-    );
+    GST_STATIC_CAPS_ANY);
 
 
 /* class initialization */
@@ -81,11 +78,6 @@ gst_timestampfiltersink_class_init (GstTimestampfiltersinkClass * klass)
   gobject_class->set_property = gst_timestampfiltersink_set_property;
   gobject_class->get_property = gst_timestampfiltersink_get_property;
   gobject_class->finalize = gst_timestampfiltersink_finalize;
-  base_sink_class->set_caps =
-      GST_DEBUG_FUNCPTR (gst_timestampfiltersink_set_caps);
-  base_sink_class->start = GST_DEBUG_FUNCPTR (gst_timestampfiltersink_start);
-  base_sink_class->stop = GST_DEBUG_FUNCPTR (gst_timestampfiltersink_stop);
-  base_sink_class->event = GST_DEBUG_FUNCPTR (gst_timestampfiltersink_event);
   base_sink_class->render = GST_DEBUG_FUNCPTR (gst_timestampfiltersink_render);
   base_sink_class->render_list =
       GST_DEBUG_FUNCPTR (gst_timestampfiltersink_render_list);
@@ -140,49 +132,6 @@ gst_timestampfiltersink_finalize (GObject * object)
   /* clean up object here */
 
   G_OBJECT_CLASS (gst_timestampfiltersink_parent_class)->finalize (object);
-}
-
-/* notify subclass of new caps */
-static gboolean
-gst_timestampfiltersink_set_caps (GstBaseSink * sink, GstCaps * caps)
-{
-  GstTimestampfiltersink *timestampfiltersink = GST_TIMESTAMPFILTERSINK (sink);
-
-  GST_DEBUG_OBJECT (timestampfiltersink, "set_caps");
-
-  return TRUE;
-}
-
-/* start and stop processing, ideal for opening/closing the resource */
-static gboolean
-gst_timestampfiltersink_start (GstBaseSink * sink)
-{
-  GstTimestampfiltersink *timestampfiltersink = GST_TIMESTAMPFILTERSINK (sink);
-
-  GST_DEBUG_OBJECT (timestampfiltersink, "start");
-
-  return TRUE;
-}
-
-static gboolean
-gst_timestampfiltersink_stop (GstBaseSink * sink)
-{
-  GstTimestampfiltersink *timestampfiltersink = GST_TIMESTAMPFILTERSINK (sink);
-
-  GST_DEBUG_OBJECT (timestampfiltersink, "stop");
-
-  return TRUE;
-}
-
-/* notify subclass of event */
-static gboolean
-gst_timestampfiltersink_event (GstBaseSink * sink, GstEvent * event)
-{
-  GstTimestampfiltersink *timestampfiltersink = GST_TIMESTAMPFILTERSINK (sink);
-
-  GST_DEBUG_OBJECT (timestampfiltersink, "event");
-
-  return TRUE;
 }
 
 static GstFlowReturn

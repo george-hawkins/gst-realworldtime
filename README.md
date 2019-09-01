@@ -63,6 +63,19 @@ Usage
     $ gst-launch-1.0 videotestsrc num-buffers=120 ! 'video/x-raw,width=1024,height=768,framerate=24/1' ! millisoverlay ! absolutetimestamp ! jpegenc ! avimux ! filesink sync=true location=out.avi
     $ gst-launch-1.0 filesrc location=out.avi ! avidemux ! timestampfiltersink
 
+Alternative
+-----------
+
+It's unfortunate that `libgstpango.so` doesn't export the symbols needed for `GstBaseTextOverlay`. If it did you wouldn't need to copy in `gstbasetextoverlay.h` and `gstbasetextoverlay.c`.
+
+An alternative might be to derive a similar element from `opencvtextoverlay`. It now uses the superclass `GstOpencvVideoFilter` but originally its direct superclass was just `GstElement`.
+
+If you look at it back at commit [`8b6ea95`](https://github.com/GStreamer/gst-plugins-bad/blob/8b6ea95/ext/opencv/gsttextoverlay.cpp) you can see it looks quite simple.
+
+`GstBaseTextOverlay` can essentially handle any video input, while `opencvtextoverlay` can only handle RGB. So you need to use `videoconvert` before and after it, to enable it to work with other elements:
+
+    $ gst-launch-1.0 videotestsrc ! videoconvert ! opencvtextoverlay text="23:59:59.123" ! videoconvert ! autovideosink
+
 Library exports
 ---------------
 

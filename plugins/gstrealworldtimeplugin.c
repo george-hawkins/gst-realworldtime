@@ -35,5 +35,9 @@ plugin_init (GstPlugin * plugin)
   return TRUE;
 }
 
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR, realworldtime, "FIXME Template plugin", plugin_init, VERSION, "LGPL",  /* FIXME */
-    "GStreamer", "http://gstreamer.net/")
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+    GST_VERSION_MINOR,
+    realworldtime,
+    "record and extract frames based on real-world time",
+    plugin_init, VERSION, "LGPL", PACKAGE_NAME,
+    "https://github.com/george-hawkins/gst-realworldtime")

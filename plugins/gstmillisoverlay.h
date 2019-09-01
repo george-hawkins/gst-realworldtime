@@ -17,7 +17,7 @@
 #ifndef _GST_MILLISOVERLAY_H_
 #define _GST_MILLISOVERLAY_H_
 
-#include <gst/gst.h>
+#include <ext/pango/gstbasetextoverlay.h>
 
 G_BEGIN_DECLS
 
@@ -32,7 +32,7 @@ typedef struct _GstMillisoverlayClass GstMillisoverlayClass;
 
 struct _GstMillisoverlay
 {
-  GstElement base_millisoverlay;
+  GstBaseTextOverlay base_millisoverlay;
 
   GstPad *sinkpad;
   GstPad *srcpad;
@@ -40,7 +40,7 @@ struct _GstMillisoverlay
 
 struct _GstMillisoverlayClass
 {
-  GstElementClass base_millisoverlay_class;
+  GstBaseTextOverlayClass base_millisoverlay_class;
 };
 
 GType gst_millisoverlay_get_type (void);

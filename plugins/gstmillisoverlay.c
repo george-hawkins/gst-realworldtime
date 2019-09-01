@@ -23,34 +23,14 @@ GST_DEBUG_CATEGORY_STATIC (gst_millisoverlay_debug_category);
 /* prototypes */
 
 
-static void gst_millisoverlay_set_property (GObject * object,
-    guint property_id, const GValue * value, GParamSpec * pspec);
-static void gst_millisoverlay_get_property (GObject * object,
-    guint property_id, GValue * value, GParamSpec * pspec);
-static void gst_millisoverlay_dispose (GObject * object);
-static void gst_millisoverlay_finalize (GObject * object);
+static gchar * gst_time_overlay_render_time (GstMillisoverlay * overlay, GstClockTime time);
+static gchar * gst_time_overlay_get_text (GstBaseTextOverlay * overlay, GstBuffer * video_frame);
 
 
 enum
 {
   PROP_0
 };
-
-/* pad templates */
-
-static GstStaticPadTemplate gst_millisoverlay_sink_template =
-GST_STATIC_PAD_TEMPLATE ("sink",
-    GST_PAD_SINK,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("application/unknown")
-    );
-
-static GstStaticPadTemplate gst_millisoverlay_src_template =
-GST_STATIC_PAD_TEMPLATE ("src",
-    GST_PAD_SRC,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("application/unknown")
-    );
 
 
 /* class initialization */
@@ -62,86 +42,86 @@ G_DEFINE_TYPE_WITH_CODE (GstMillisoverlay, gst_millisoverlay, GST_TYPE_ELEMENT,
 static void
 gst_millisoverlay_class_init (GstMillisoverlayClass * klass)
 {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
-
-  /* Setting up pads and setting metadata should be moved to
-     base_class_init if you intend to subclass this class. */
-  gst_element_class_add_static_pad_template (element_class,
-      &gst_millisoverlay_sink_template);
-  gst_element_class_add_static_pad_template (element_class,
-      &gst_millisoverlay_src_template);
+  GstBaseTextOverlayClass *base_text_overlay_class = GST_BASE_TEXT_OVERLAY_CLASS (klass);
 
   gst_element_class_set_static_metadata (GST_ELEMENT_CLASS (klass),
-      "FIXME Long name", "Generic", "FIXME Description",
-      "FIXME <fixme@example.com>");
+      "Millis Overlay", "Filter/Editor/Video",
+      "Overlays times and time stamps on a video stream",
+      "George Hawkins <https://github.com/george-hawkins>");
 
-  gobject_class->set_property = gst_millisoverlay_set_property;
-  gobject_class->get_property = gst_millisoverlay_get_property;
-  gobject_class->dispose = gst_millisoverlay_dispose;
-  gobject_class->finalize = gst_millisoverlay_finalize;
+  base_text_overlay_class->get_text = gst_time_overlay_get_text;
+
+  g_mutex_lock (base_text_overlay_class->pango_lock);
+  PangoContext *context = base_text_overlay_class->pango_context;
+
+  pango_context_set_language (context, pango_language_from_string ("en_US"));
+  pango_context_set_base_dir (context, PANGO_DIRECTION_LTR);
+
+  PangoFontDescription *font_description = pango_font_description_new ();
+  pango_font_description_set_family_static (font_description, "Monospace");
+  pango_font_description_set_style (font_description, PANGO_STYLE_NORMAL);
+  pango_font_description_set_variant (font_description, PANGO_VARIANT_NORMAL);
+  pango_font_description_set_weight (font_description, PANGO_WEIGHT_NORMAL);
+  pango_font_description_set_stretch (font_description, PANGO_STRETCH_NORMAL);
+  pango_font_description_set_size (font_description, 18 * PANGO_SCALE);
+  pango_context_set_font_description (context, font_description);
+  pango_font_description_free (font_description);
+  g_mutex_unlock (base_text_overlay_class->pango_lock);
 }
+
 static void
 gst_millisoverlay_init (GstMillisoverlay * millisoverlay)
 {
-  millisoverlay->sinkpad =
-      gst_pad_new_from_static_template (&gst_millisoverlay_sink_template,
-      "sink");
+  GstBaseTextOverlay *gst_base_text_overlay = GST_BASE_TEXT_OVERLAY (millisoverlay);
 
-  millisoverlay->srcpad =
-      gst_pad_new_from_static_template (&gst_millisoverlay_src_template, "src");
+  gst_base_text_overlay->valign = GST_BASE_TEXT_OVERLAY_VALIGN_TOP;
+  gst_base_text_overlay->halign = GST_BASE_TEXT_OVERLAY_HALIGN_LEFT;
 }
 
-void
-gst_millisoverlay_set_property (GObject * object, guint property_id,
-    const GValue * value, GParamSpec * pspec)
+/* Called with lock held */
+static gchar *
+gst_time_overlay_get_text (GstBaseTextOverlay * overlay, GstBuffer * video_frame)
 {
-  GstMillisoverlay *millisoverlay = GST_MILLISOVERLAY (object);
+  overlay->need_render = TRUE;
 
-  GST_DEBUG_OBJECT (millisoverlay, "set_property");
+  GstClockTime ts_buffer = GST_BUFFER_TIMESTAMP (video_frame);
 
-  switch (property_id) {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
+  if (!GST_CLOCK_TIME_IS_VALID (ts_buffer)) {
+    GST_DEBUG ("buffer without valid timestamp");
+    return g_strdup ("");
   }
-}
 
-void
-gst_millisoverlay_get_property (GObject * object, guint property_id,
-    GValue * value, GParamSpec * pspec)
-{
-  GstMillisoverlay *millisoverlay = GST_MILLISOVERLAY (object);
+  GST_DEBUG ("buffer with timestamp %" GST_TIME_FORMAT, GST_TIME_ARGS (ts_buffer));
 
-  GST_DEBUG_OBJECT (millisoverlay, "get_property");
+  gchar * time_str = gst_time_overlay_render_time (GST_MILLISOVERLAY (overlay), ts_buffer);
 
-  switch (property_id) {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
+  gchar * txt = g_strdup (overlay->default_text);
+
+  gchar *ret;
+
+  if (txt != NULL && *txt != '\0') {
+    ret = g_strdup_printf ("%s %s", txt, time_str);
+  } else {
+    ret = time_str;
+    time_str = NULL;
   }
+
+  g_free (txt);
+  g_free (time_str);
+
+  return ret;
 }
 
-void
-gst_millisoverlay_dispose (GObject * object)
+static gchar *
+gst_time_overlay_render_time (GstMillisoverlay * overlay, GstClockTime time)
 {
-  GstMillisoverlay *millisoverlay = GST_MILLISOVERLAY (object);
+  if (!GST_CLOCK_TIME_IS_VALID (time))
+    return g_strdup ("");
 
-  GST_DEBUG_OBJECT (millisoverlay, "dispose");
+  guint hours = (guint) (time / (GST_SECOND * 60 * 60));
+  guint mins = (guint) ((time / (GST_SECOND * 60)) % 60);
+  guint secs = (guint) ((time / GST_SECOND) % 60);
+  guint msecs = (guint) ((time % GST_SECOND) / (1000 * 1000));
 
-  /* clean up as possible.  may be called multiple times */
-
-  G_OBJECT_CLASS (gst_millisoverlay_parent_class)->dispose (object);
-}
-
-void
-gst_millisoverlay_finalize (GObject * object)
-{
-  GstMillisoverlay *millisoverlay = GST_MILLISOVERLAY (object);
-
-  GST_DEBUG_OBJECT (millisoverlay, "finalize");
-
-  /* clean up object here */
-
-  G_OBJECT_CLASS (gst_millisoverlay_parent_class)->finalize (object);
+  return g_strdup_printf ("%u:%02u:%02u.%03u", hours, mins, secs, msecs);
 }

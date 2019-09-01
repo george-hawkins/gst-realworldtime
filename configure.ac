@@ -8,6 +8,8 @@ dnl required versions of gstreamer and plugins-base
 GST_REQUIRED=1.0.0
 GSTPB_REQUIRED=1.0.0
 
+PANGO_REQUIRED=1.22.0
+
 AC_CONFIG_SRCDIR([plugins/gstrealworldtimeplugin.c])
 AC_CONFIG_HEADERS([config.h])
 
@@ -56,8 +58,22 @@ PKG_CHECK_MODULES(GST, [
       You need to install or upgrade the GStreamer development
       packages on your system. On debian-based systems these are
       libgstreamer1.0-dev and libgstreamer-plugins-base1.0-dev.
-      on RPM-based systems gstreamer1.0-devel, libgstreamer1.0-devel
+      On RPM-based systems gstreamer1.0-devel, libgstreamer1.0-devel
       or similar. The minimum version required is $GST_REQUIRED.
+  ])
+])
+
+PKG_CHECK_MODULES(PANGO, [
+  pangocairo >= $PANGO_REQUIRED
+], [
+  AC_SUBST(PANGO_CFLAGS)
+  AC_SUBST(PANGO_LIBS)
+], [
+  AC_MSG_ERROR([
+      You need to install or upgrade the Pango development
+      package on your system. On debian-based systems this is
+      libpango1.0-dev. On RPM-based systems libpango1.0-devel
+      or similar. The minimum version required is $PANGO_REQUIRED.
   ])
 ])
 

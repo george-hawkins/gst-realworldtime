@@ -35,7 +35,7 @@ enum
 
 /* class initialization */
 
-G_DEFINE_TYPE_WITH_CODE (GstMillisoverlay, gst_millisoverlay, GST_TYPE_ELEMENT,
+G_DEFINE_TYPE_WITH_CODE (GstMillisoverlay, gst_millisoverlay, GST_TYPE_BASE_TEXT_OVERLAY,
     GST_DEBUG_CATEGORY_INIT (gst_millisoverlay_debug_category, "millisoverlay",
         0, "debug category for millisoverlay element"));
 

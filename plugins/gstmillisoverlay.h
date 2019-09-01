@@ -17,7 +17,7 @@
 #ifndef _GST_MILLISOVERLAY_H_
 #define _GST_MILLISOVERLAY_H_
 
-#include <ext/pango/gstbasetextoverlay.h>
+#include "gstbasetextoverlay.h"
 
 G_BEGIN_DECLS
 

@@ -1,7 +1,7 @@
 plugin_LTLIBRARIES = libgstrealworldtime.la
 
 # sources used to compile this plug-in
-libgstrealworldtime_la_SOURCES = gstrealworldtimeplugin.c gstabsolutetimestamp.h gstabsolutetimestamp.c gstmillisoverlay.h gstmillisoverlay.c gsttimestampfiltersink.h gsttimestampfiltersink.c
+libgstrealworldtime_la_SOURCES = gstrealworldtimeplugin.c gstabsolutetimestamp.h gstabsolutetimestamp.c gstmillisoverlay.h gstmillisoverlay.c gsttimestampfiltersink.h gsttimestampfiltersink.c gstbasetextoverlay.h gstbasetextoverlay.c 
 
 # compiler and linker flags used to compile this plugin, set in configure.ac
 libgstrealworldtime_la_CFLAGS = $(GST_CFLAGS) $(PANGO_CFLAGS)
